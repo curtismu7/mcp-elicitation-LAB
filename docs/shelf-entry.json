@@ -1,0 +1,16 @@
+{
+  "demos": [
+    {
+      "id": "mcp-elicitation-lab",
+      "name": "MCP Elicitation LAB",
+      "catalogId": "D37",
+      "kind": "Tester",
+      "description": "An MCP server mid-tool-call asks the person for more: form mode and URL mode, accept / decline / cancel, -32042, and the spec's safety rules, with findings when a server breaks them. Mock server and mock client; nothing is fetched.",
+      "url": "http://localhost:6800",
+      "healthPath": "/api/health",
+      "composeFile": "mcp-elicitation-LAB/docker-compose.yml",
+      "composeOverlays": [],
+      "notes": "Host-run: npm start (port 6800). Docker: HOST_PORT=6800 docker compose up --build -d (published on 127.0.0.1 only). Mock only: no tenant, no credentials, no outbound call. composeFile is relative to the folder that holds the clone (a placeholder the shelf resolves). Targets MCP spec 2025-11-25; the draft differs (see the page's Spec basis)."
+    }
+  ]
+}

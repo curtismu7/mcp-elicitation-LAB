@@ -1,0 +1,448 @@
+{
+  "schema": "demo-content-pack/1",
+  "id": "mcp-elicitation-lab",
+  "title": "MCP Elicitation LAB",
+  "version": "0.1.0",
+  "demo": {
+    "id": "mcp-elicitation-lab",
+    "name": "MCP Elicitation LAB",
+    "catalog": "D37",
+    "baseUrl": "http://127.0.0.1:6800",
+    "doctor": "/api/health",
+    "tags": [
+      "mcp",
+      "elicitation",
+      "form-mode",
+      "url-mode",
+      "consent",
+      "phishing",
+      "mock"
+    ]
+  },
+  "glossary": [
+    {
+      "id": "elicitation",
+      "term": "Elicitation",
+      "definition": "An MCP server asking the person, through the client, for more input in the middle of a request. Two modes: form (structured data through the client) and URL (the person goes to a page the client never sees)."
+    },
+    {
+      "id": "form-mode",
+      "term": "Form mode",
+      "definition": "The server sends a flat JSON schema of primitives; the client builds a form. The data passes through the client, so it must never be a password, API key, token or payment credential."
+    },
+    {
+      "id": "url-mode",
+      "term": "URL mode",
+      "definition": "The server sends a URL and an elicitationId. The client shows the full URL, asks for consent and opens it where neither the client nor the model can read what is typed. Accept means consent, not completion."
+    },
+    {
+      "id": "elicitation-actions",
+      "term": "accept, decline, cancel",
+      "definition": "Accept: the person agreed (and, for a form, submitted data). Decline: an explicit no. Cancel: dismissed without a choice (closed the dialog, the page failed to load)."
+    },
+    {
+      "id": "url-elicitation-required",
+      "term": "URLElicitationRequired (-32042)",
+      "definition": "The error a server returns when a request cannot proceed until a URL-mode elicitation is completed. It carries the list of required elicitations, each URL mode with an elicitationId. Introduced in 2025-11-25; not in the current draft."
+    },
+    {
+      "id": "elicitation-phishing",
+      "term": "Elicitation phishing",
+      "definition": "Alice triggers an elicitation and sends the link to Bob. If the server does not check that the person opening the URL is the person it was generated for, Bob's account gets bound to Alice's session."
+    }
+  ],
+  "sources": [
+    {
+      "id": "mcp-elicitation-2025-11-25",
+      "title": "MCP specification 2025-11-25: Elicitation",
+      "url": "https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation",
+      "kind": "standard",
+      "use": "The revision this lab targets",
+      "status": "read",
+      "checked": "2026-10-22"
+    },
+    {
+      "id": "mcp-elicitation-draft",
+      "title": "MCP specification draft: Elicitation",
+      "url": "https://modelcontextprotocol.io/specification/draft/client/elicitation",
+      "kind": "standard",
+      "use": "Draft differences (unstable)",
+      "status": "read",
+      "checked": "2026-10-22"
+    }
+  ],
+  "stories": [
+    {
+      "id": "S01",
+      "title": "Form: the person accepts",
+      "say": "A booking needs a few details. The client shows a form built from the schema, pre-filled with defaults, and the person submits it."
+    },
+    {
+      "id": "S02",
+      "title": "Form: the person declines",
+      "say": "Decline is an explicit no. The server must handle it (offer alternatives), not treat it as an error."
+    },
+    {
+      "id": "S03",
+      "title": "Form: the person dismisses it",
+      "say": "Cancel is \"closed the dialog, pressed Escape, the browser failed to load\": no explicit choice. The server may ask again later."
+    },
+    {
+      "id": "S04",
+      "title": "Form: the client validates before sending",
+      "say": "The first attempt breaks the schema (party of 99, bad date). The client blocks it and shows why; the corrected form is sent."
+    },
+    {
+      "id": "S05",
+      "title": "Empty capability means form only",
+      "say": "A client that declares elicitation as {} is treated as form-only (backwards compatibility). Form requests work."
+    },
+    {
+      "id": "S06",
+      "title": "URL mode: a secret goes to the server, not the client",
+      "say": "An API key is typed on the server's own page. The client only shows the full URL and asks for consent; accept means consent, not completion. A completion notification closes the loop."
+    },
+    {
+      "id": "S07",
+      "title": "URL mode: -32042 then retry",
+      "say": "A tool call cannot proceed until the person authorizes a third party. The server answers -32042 URLElicitationRequired; after the out-of-band step and a completion notification the client retries."
+    },
+    {
+      "id": "S08",
+      "title": "URL mode: the person declines to open the link",
+      "say": "No consent, no navigation. The original request cannot proceed and the client offers a manual retry."
+    },
+    {
+      "id": "S09",
+      "title": "URL mode: the client did not declare it",
+      "say": "A well-behaved server checks the declared capabilities first and falls back, instead of sending a mode the client never offered."
+    },
+    {
+      "id": "S10",
+      "title": "URL mode: a stray completion notification",
+      "say": "A notification naming an unknown elicitationId arrives first. The client must ignore it and carry on."
+    },
+    {
+      "id": "S11",
+      "title": "A form asks for a password and an API key",
+      "say": "The spec says servers MUST NOT collect passwords, API keys, tokens or payment credentials through form mode: they would pass through the client and its logs."
+    },
+    {
+      "id": "S12",
+      "title": "A form schema is nested",
+      "say": "Form schemas are flat objects of primitives. This one nests an object and an array of objects. The lab client cannot render it and cancels (that fallback is the lab's own choice: the spec does not define it)."
+    },
+    {
+      "id": "S13",
+      "title": "A form hides a link",
+      "say": "Servers SHOULD NOT put clickable URLs in form fields; clients SHOULD NOT render them as clickable. Use URL mode for links."
+    },
+    {
+      "id": "S14",
+      "title": "The URL carries a password and a token",
+      "say": "A URL with credentials and an access token in it is sensitive and pre-authenticated: a malicious client could replay it. The client still shows the full URL and warns before any consent."
+    },
+    {
+      "id": "S15",
+      "title": "Look-alike host over plain HTTP",
+      "say": "A Punycode host over http. The client SHOULD highlight the domain and warn about the ambiguous host; the server SHOULD use HTTPS."
+    },
+    {
+      "id": "S16",
+      "title": "A mode the client never declared",
+      "say": "The client declared form only; the server sends URL mode anyway. The client MUST answer -32602 (Invalid params)."
+    },
+    {
+      "id": "S17",
+      "title": "A malformed -32042 error",
+      "say": "The error lists a form-mode entry with no elicitationId. -32042 may only carry URL mode elicitations, each with an id."
+    },
+    {
+      "id": "S18",
+      "title": "Phishing: the server does not check who opens the link",
+      "say": "Alice triggers an elicitation but sends the link to Bob. Bob opens it and completes it. A server that does not verify the user binds Bob's account to Alice's session."
+    },
+    {
+      "id": "S19",
+      "title": "Phishing: the server verifies the person",
+      "say": "The same attack, but the server's connect page compares the person opening the link with the person the elicitation was generated for, and refuses."
+    }
+  ],
+  "cards": [
+    {
+      "id": "try-form-accept",
+      "label": "Form: the person accepts",
+      "description": "A booking needs a few details. The client shows a form built from the schema, pre-filled with defaults, and the person submits it.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-form-accept"
+      },
+      "story": "S01",
+      "terms": [
+        "form-mode",
+        "elicitation-actions"
+      ]
+    },
+    {
+      "id": "try-form-decline",
+      "label": "Form: the person declines",
+      "description": "Decline is an explicit no. The server must handle it (offer alternatives), not treat it as an error.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-form-decline"
+      },
+      "story": "S02",
+      "terms": [
+        "form-mode",
+        "elicitation-actions"
+      ]
+    },
+    {
+      "id": "try-form-cancel",
+      "label": "Form: the person dismisses it",
+      "description": "Cancel is \"closed the dialog, pressed Escape, the browser failed to load\": no explicit choice. The server may ask again later.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-form-cancel"
+      },
+      "story": "S03",
+      "terms": [
+        "form-mode",
+        "elicitation-actions"
+      ]
+    },
+    {
+      "id": "try-form-validation",
+      "label": "Form: the client validates before sending",
+      "description": "The first attempt breaks the schema (party of 99, bad date). The client blocks it and shows why; the corrected form is sent.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-form-validation"
+      },
+      "story": "S04",
+      "terms": [
+        "form-mode",
+        "elicitation-actions"
+      ]
+    },
+    {
+      "id": "try-form-only-compat",
+      "label": "Empty capability means form only",
+      "description": "A client that declares elicitation as {} is treated as form-only (backwards compatibility). Form requests work.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-form-only-compat"
+      },
+      "story": "S05",
+      "terms": [
+        "form-mode",
+        "elicitation-actions"
+      ]
+    },
+    {
+      "id": "try-url-create",
+      "label": "URL mode: a secret goes to the server, not the client",
+      "description": "An API key is typed on the server's own page. The client only shows the full URL and asks for consent; accept means consent, not completion. A completion notification closes the loop.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-url-create"
+      },
+      "story": "S06",
+      "terms": [
+        "elicitation"
+      ]
+    },
+    {
+      "id": "try-url-required",
+      "label": "URL mode: -32042 then retry",
+      "description": "A tool call cannot proceed until the person authorizes a third party. The server answers -32042 URLElicitationRequired; after the out-of-band step and a completion notification the client retries.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-url-required"
+      },
+      "story": "S07",
+      "terms": [
+        "url-mode",
+        "url-elicitation-required"
+      ]
+    },
+    {
+      "id": "try-url-decline",
+      "label": "URL mode: the person declines to open the link",
+      "description": "No consent, no navigation. The original request cannot proceed and the client offers a manual retry.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-url-decline"
+      },
+      "story": "S08",
+      "terms": [
+        "elicitation"
+      ]
+    },
+    {
+      "id": "try-url-no-capability",
+      "label": "URL mode: the client did not declare it",
+      "description": "A well-behaved server checks the declared capabilities first and falls back, instead of sending a mode the client never offered.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-url-no-capability"
+      },
+      "story": "S09",
+      "terms": [
+        "elicitation"
+      ]
+    },
+    {
+      "id": "try-url-unknown-complete",
+      "label": "URL mode: a stray completion notification",
+      "description": "A notification naming an unknown elicitationId arrives first. The client must ignore it and carry on.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-url-unknown-complete"
+      },
+      "story": "S10",
+      "terms": [
+        "elicitation"
+      ]
+    },
+    {
+      "id": "try-bad-password-form",
+      "label": "A form asks for a password and an API key",
+      "description": "The spec says servers MUST NOT collect passwords, API keys, tokens or payment credentials through form mode: they would pass through the client and its logs.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-bad-password-form"
+      },
+      "story": "S11",
+      "terms": [
+        "elicitation"
+      ]
+    },
+    {
+      "id": "try-bad-nested-form",
+      "label": "A form schema is nested",
+      "description": "Form schemas are flat objects of primitives. This one nests an object and an array of objects. The lab client cannot render it and cancels (that fallback is the lab's own choice: the spec does not define it).",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-bad-nested-form"
+      },
+      "story": "S12",
+      "terms": [
+        "elicitation"
+      ]
+    },
+    {
+      "id": "try-bad-clickable-form",
+      "label": "A form hides a link",
+      "description": "Servers SHOULD NOT put clickable URLs in form fields; clients SHOULD NOT render them as clickable. Use URL mode for links.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-bad-clickable-form"
+      },
+      "story": "S13",
+      "terms": [
+        "elicitation"
+      ]
+    },
+    {
+      "id": "try-bad-leaky-url",
+      "label": "The URL carries a password and a token",
+      "description": "A URL with credentials and an access token in it is sensitive and pre-authenticated: a malicious client could replay it. The client still shows the full URL and warns before any consent.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-bad-leaky-url"
+      },
+      "story": "S14",
+      "terms": [
+        "elicitation"
+      ]
+    },
+    {
+      "id": "try-bad-idn-http",
+      "label": "Look-alike host over plain HTTP",
+      "description": "A Punycode host over http. The client SHOULD highlight the domain and warn about the ambiguous host; the server SHOULD use HTTPS.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-bad-idn-http"
+      },
+      "story": "S15",
+      "terms": [
+        "elicitation"
+      ]
+    },
+    {
+      "id": "try-bad-wrong-mode",
+      "label": "A mode the client never declared",
+      "description": "The client declared form only; the server sends URL mode anyway. The client MUST answer -32602 (Invalid params).",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-bad-wrong-mode"
+      },
+      "story": "S16",
+      "terms": [
+        "elicitation"
+      ]
+    },
+    {
+      "id": "try-bad-error-shape",
+      "label": "A malformed -32042 error",
+      "description": "The error lists a form-mode entry with no elicitationId. -32042 may only carry URL mode elicitations, each with an id.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-bad-error-shape"
+      },
+      "story": "S17",
+      "terms": [
+        "url-mode",
+        "url-elicitation-required"
+      ]
+    },
+    {
+      "id": "try-phish-vulnerable",
+      "label": "Phishing: the server does not check who opens the link",
+      "description": "Alice triggers an elicitation but sends the link to Bob. Bob opens it and completes it. A server that does not verify the user binds Bob's account to Alice's session.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-phish-vulnerable"
+      },
+      "story": "S18",
+      "terms": [
+        "url-mode",
+        "elicitation-phishing"
+      ]
+    },
+    {
+      "id": "try-phish-safe",
+      "label": "Phishing: the server verifies the person",
+      "description": "The same attack, but the server's connect page compares the person opening the link with the person the elicitation was generated for, and refuses.",
+      "group": "try-it",
+      "action": {
+        "type": "route",
+        "href": "/#scenario-phish-safe"
+      },
+      "story": "S19",
+      "terms": [
+        "url-mode",
+        "elicitation-phishing"
+      ]
+    }
+  ]
+}

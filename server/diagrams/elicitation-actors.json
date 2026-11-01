@@ -1,0 +1,24 @@
+{
+  "schema": "diagram-studio/1",
+  "id": "elicitation-actors",
+  "title": "Who talks to whom during an elicitation",
+  "lede": "The person, the client, the server and the person's browser. A link lights up when a message of the run has crossed it. Simulated: the server and the client are mocks, and no URL is ever opened or fetched.",
+  "groups": {
+    "person": { "label": "The person", "color": "dark" },
+    "client": { "label": "MCP client (mock)", "color": "blue" },
+    "server": { "label": "MCP server (mock)", "color": "red" },
+    "browser": { "label": "Browser", "color": "grey" }
+  },
+  "nodes": [
+    { "id": "person", "label": "Person", "group": "person", "x": 0, "y": 40 },
+    { "id": "client", "label": "Client (mock)", "group": "client", "x": 190, "y": 40 },
+    { "id": "server", "label": "Server (mock)", "group": "server", "x": 380, "y": 40 },
+    { "id": "browser", "label": "Browser", "group": "browser", "x": 190, "y": 190 }
+  ],
+  "edges": [
+    { "source": "person", "target": "client", "label": "choice", "dashed": true },
+    { "source": "client", "target": "server", "label": "JSON-RPC", "dashed": true },
+    { "source": "client", "target": "browser", "label": "opens URL", "dashed": true },
+    { "source": "browser", "target": "server", "label": "server page", "dashed": true }
+  ]
+}
