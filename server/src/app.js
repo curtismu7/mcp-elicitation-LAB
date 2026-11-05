@@ -11,6 +11,7 @@ import { LIVE_REFUSAL } from './config.js';
 import { diagramByName } from './diagramData.js';
 import { TALK_TRACK } from './talkTrack.js';
 import { DEMO, SPEC_SOURCES } from './spec.js';
+import { shelfInfo } from './shelfLink.js';
 
 export { DEMO, SPEC_SOURCES };
 
@@ -64,6 +65,7 @@ export function createApp({ health = createHealth(), workspaces = createWorkspac
   app.use('/api', (_req, res) => res.status(404).json({ error: 'not_found' }));
   if (fs.existsSync(path.join(webDist, 'index.html'))) {
     app.use(express.static(webDist));
+app.get('/api/shelf', (_req, res) => { res.set('Cache-Control', 'no-store'); res.json(shelfInfo()); }); // the header "Shelf" button
     app.get('*', (_req, res) => res.sendFile(path.join(webDist, 'index.html')));
   }
   // The last two handlers catch everything that is left, for every method and every path: Express's default answers ("Cannot POST /<path>")
