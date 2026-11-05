@@ -55,7 +55,7 @@ function mockApi({ runs = [], gate = null } = {}) {
   globalThis.fetch = vi.fn(async (url, init) => {
     calls.push({ url, body: init?.body ? JSON.parse(init.body) : null, headers: init?.headers ?? {} });
     const clean = url.split("?")[0];
-    const body = clean === "/api/scenarios" ? { scenarios: SCEN } : clean === "/api/spec" ? SPEC : clean === "/api/info" ? INFO : clean === "/api/diagram" ? DIAGRAM : clean === "/api/talk-track" ? { talkTrack: TALK } : clean === "/api/reset" ? { reset: true } : queue.shift();
+    const body = clean === "/api/shelf" ? { shelfUrl: null } : clean === "/api/scenarios" ? { scenarios: SCEN } : clean === "/api/spec" ? SPEC : clean === "/api/info" ? INFO : clean === "/api/diagram" ? DIAGRAM : clean === "/api/talk-track" ? { talkTrack: TALK } : clean === "/api/reset" ? { reset: true } : queue.shift();
     if (gate && (clean === "/api/runs" || clean.includes("/respond"))) await gate; // a run stays in flight until the test opens the gate
     return { ok: true, status: 200, json: async () => body };
   });

@@ -7,6 +7,7 @@ import SpecPanel from "./SpecPanel.jsx";
 import TalkTrack from "./TalkTrack.jsx";
 import { getDiagram, getInfo, getScenarios, getSpec, getTalkTrack, resetServer, respond, startRun } from "./api.js";
 import ShelfLink from "./components/ShelfLink.jsx";
+import { workspaceId } from "./workspace.js";
 
 const SPEEDS = [0.5, 1, 2, 4];
 const CAPS = { default: undefined, both: { form: {}, url: {} }, form: { form: {} }, url: { url: {} }, empty: {}, none: null };
@@ -103,7 +104,7 @@ export default function App() {
             {!presenter && <p className="head__intro">An MCP server in the middle of a tool call needs more from the person. It asks the client, in <strong>form</strong> mode or <strong>URL</strong> mode, and the person can accept, decline or cancel. Pick a scenario, change what the client declares, and watch the messages, the dialog and the rules.</p>}
           </div>
           <div className="head__tools">
-            <ShelfLink />
+            <ShelfLink headers={() => ({ "x-workspace": workspaceId() })} />
             <div className="seg" role="group" aria-label="Mode">
               <button type="button" aria-pressed="true" onClick={() => setLiveMsg("")} data-testid="mode-mock">Mock</button>
               <button type="button" aria-pressed="false" onClick={() => setLiveMsg(info?.live?.reason || LIVE_FALLBACK)} data-testid="mode-live">Live</button>
