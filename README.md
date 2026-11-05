@@ -3,7 +3,7 @@
 An MCP server in the middle of a tool call needs more from the person, and asks the client for it in form mode or URL mode. This lab runs 19 scenarios against a mock server and a mock client that follows the spec's rules, shows the raw JSON-RPC of every message, builds the dialog a compliant client must show, and reports findings when a server breaks a MUST or SHOULD.
 
 Tier: Tester
-Repo: https://github.com/ping-sandbox/mcp-elicitation-LAB
+Repo: https://github.com/curtismu7/mcp-elicitation-LAB
 Catalog: D37
 
 Catalog D37 ("MCP elicitation lab") is an existing row of the demo catalog, not a placeholder. The catalog lists its kind as Demo; this README declares Tester because the app probes and scores a server's behaviour against the spec rather than telling a customer story.
@@ -32,7 +32,7 @@ What is the lab's own behaviour (the spec does not define it) is labelled "lab b
 Prerequisites: Node 26 or newer. Docker only if you use the Docker form. Mock mode needs no setup at all: no tenant, no credentials, no settings file.
 
 ```
-git clone https://github.com/ping-sandbox/mcp-elicitation-LAB.git
+git clone https://github.com/curtismu7/mcp-elicitation-LAB.git
 cd mcp-elicitation-LAB
 npm ci
 npm run build
