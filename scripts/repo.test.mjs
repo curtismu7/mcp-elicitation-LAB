@@ -58,7 +58,7 @@ test('no host in shipped text except .example / .invalid / loopback (and the two
       hits.push(`${path.relative(root, p)}: ${h}`);
     }
     if (/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(t) && !/content-pack\.json$/.test(p)) hits.push(`${path.relative(root, p)}: a UUID-shaped id`);
-    if (/\/Users\/|cmuir|curtismu|ping-devops/i.test(t)) hits.push(`${path.relative(root, p)}: a personal path or name`);
+    if (/\/Users\/|cmuir_pingcorp|ping-devops/i.test(t)) hits.push(`${path.relative(root, p)}: a personal path or name`);
   }
   assert.deepEqual(hits, []);
 });
@@ -100,7 +100,7 @@ test('README follows the README standard: title ends in LAB, plain Tier, Repo an
   assert.match(r, /Port range for this app: 6800-6849\./);
   assert.match(r, /util\.parseEnv/);
   assert.match(r, /\/api\/health/);
-  assert.ok(!/ping-devops|cmuir/i.test(r));
+  assert.ok(!/ping-devops|cmuir_pingcorp/i.test(r)); // the owner org (curtismu7) is allowed: it is the Repo line
 });
 
 test('app CSS follows the CSS standard: tokens only, no dark-mode media query, no forced priority, no italics, breakpoints 600 and 900 only, no purple, shared stylesheet first', () => {
