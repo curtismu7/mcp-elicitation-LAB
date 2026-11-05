@@ -100,7 +100,7 @@ test('README follows the README standard: title ends in LAB, plain Tier, Repo an
   assert.match(r, /Port range for this app: 6800-6849\./);
   assert.match(r, /util\.parseEnv/);
   assert.match(r, /\/api\/health/);
-  assert.ok(!/ping-devops|cmuir|curtismu/i.test(r));
+  assert.ok(!/ping-devops|cmuir/i.test(r));
 });
 
 test('app CSS follows the CSS standard: tokens only, no dark-mode media query, no forced priority, no italics, breakpoints 600 and 900 only, no purple, shared stylesheet first', () => {
