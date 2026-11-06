@@ -15,6 +15,12 @@ const CAP_LABEL = { default: "as the scenario sets", both: "form + url", form: "
 const dialogKey = (run) => (run?.status === "awaiting_user" && run.pending ? `${run.id}-${run.transcript.filter((m) => m.method === "elicitation/create").length}-${run.pending.elicitationId ?? ""}` : null);
 const STATUS = { running: "running", awaiting_user: "waiting for the person", done: "done", failed: "failed" };
 const DIAGRAM = "elicitation-actors";
+const THEME_KEY = "mce.theme";
+const THEMES = [["auto", "Auto"], ["light", "Light"], ["dark", "Dark"]];
+function initialTheme() {
+  try { const t = localStorage.getItem(THEME_KEY); if (t === "light" || t === "dark") return t; } catch { /* storage blocked */ }
+  return "auto";
+}
 const LIVE_FALLBACK = "Live mode is not available in this lab. It stays on Mock.";
 // The banner is never blank and always names the mode. This lab only has mock; the same text shows in presenter mode.
 export const BANNER = "MOCK mode, simulated. The MCP server and the MCP client here are both mocks running inside this app. No URL you see is ever opened or fetched, and nothing leaves this machine. Real MCP clients were not probed, and the spec pages this lab did not read are UNVERIFIED.";
@@ -39,7 +45,15 @@ export default function App() {
   const [liveMsg, setLiveMsg] = useState("");
   const [presenter, setPresenter] = useState(false);
   const [openKey, setOpenKey] = useState(null);
+  const [theme, setTheme] = useState(initialTheme);
   const timer = useRef(null);
+
+  useEffect(() => { if (theme === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = theme; }, [theme]);
+
+  const pickTheme = (next) => {
+    try { if (next === "auto") localStorage.removeItem(THEME_KEY); else localStorage.setItem(THEME_KEY, next); } catch { /* not remembered */ }
+    setTheme(next);
+  };
 
   useEffect(() => {
     getScenarios().then((s) => { setScenarios(s.scenarios); const wanted = hashScenario(); setScenarioId(s.scenarios.some((x) => x.id === wanted) ? wanted : s.scenarios[0]?.id ?? ""); }).catch((e) => setError(e.message));
@@ -110,6 +124,11 @@ export default function App() {
               <button type="button" aria-pressed="false" onClick={() => setLiveMsg(info?.live?.reason || LIVE_FALLBACK)} data-testid="mode-live">Live</button>
             </div>
             <span className="chip" data-testid="mode">Mode: mock (in-process mocks)</span>
+            <label className="shell-theme">Theme
+              <select value={theme} onChange={(e) => pickTheme(e.target.value)}>
+                {THEMES.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+              </select>
+            </label>
             <button type="button" onClick={onReset} data-testid="reset">Reset</button>
             <button type="button" aria-pressed={presenter} onClick={() => setPresenter((v) => !v)} data-testid="presenter">{presenter ? "Exit presenter (Esc)" : "Presenter (P)"}</button>
           </div>
