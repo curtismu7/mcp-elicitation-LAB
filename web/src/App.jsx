@@ -5,7 +5,7 @@ import Transcript from "./Transcript.jsx";
 import Findings from "./Findings.jsx";
 import SpecPanel from "./SpecPanel.jsx";
 import TalkTrack from "./TalkTrack.jsx";
-import { getDiagram, getInfo, getScenarios, getSpec, getTalkTrack, resetServer, respond, startRun } from "./api.js";
+import { getDiagram, getInfo, getScenarios, getSpec, getTalkTrack, postMode, resetServer, respond, startRun } from "./api.js";
 import ShelfLink from "./components/ShelfLink.jsx";
 import { workspaceId } from "./workspace.js";
 
@@ -49,6 +49,11 @@ export default function App() {
   const timer = useRef(null);
 
   useEffect(() => { if (theme === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = theme; }, [theme]);
+
+  // Rule 19: Real asks the server, which refuses with 409 and the honest reason; the page stays in Mock and the data is reloaded.
+  const chooseReal = () => {
+    postMode("real").then(() => setLiveMsg(""), (e) => setLiveMsg(e.message || LIVE_FALLBACK));
+  };
 
   const pickTheme = (next) => {
     try { if (next === "auto") localStorage.removeItem(THEME_KEY); else localStorage.setItem(THEME_KEY, next); } catch { /* not remembered */ }
@@ -121,7 +126,9 @@ export default function App() {
             <ShelfLink headers={() => ({ "x-workspace": workspaceId() })} />
             <div className="seg" role="group" aria-label="Mode">
               <button type="button" aria-pressed="true" onClick={() => setLiveMsg("")} data-testid="mode-mock">Mock</button>
-              <button type="button" aria-pressed="false" onClick={() => setLiveMsg(info?.live?.reason || LIVE_FALLBACK)} data-testid="mode-live">Live</button>
+              <button type="button" aria-pressed="false" aria-disabled={info?.realAvailable === false ? "true" : undefined}
+                title={info?.realAvailable === false && info?.realReason ? info.realReason : undefined}
+                onClick={chooseReal} data-testid="mode-real">Real</button>
             </div>
             <span className="chip" data-testid="mode">Mode: mock (in-process mocks)</span>
             <label className="shell-theme">Theme

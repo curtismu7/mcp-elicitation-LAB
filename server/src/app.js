@@ -36,8 +36,17 @@ export function createApp({ health = createHealth(), workspaces = createWorkspac
     req.workspaceId = id;
     next();
   });
-  // The mode is always mock. Live is not available here and says so (the header toggle shows `live.reason` when it is clicked).
-  app.get('/api/info', (_req, res) => res.set('Cache-Control', 'no-store').json({ mode: 'mock', modes: ['mock', 'live'], live: { available: false, reason: LIVE_REFUSAL }, simulated: true }));
+  // The mode is always mock. Real is not available here and says so (rule 19): GET /api/info carries the toggle shape,
+  // POST /api/mode accepts exactly {source} and refuses "real" with a clear 409, never changing the mode.
+  app.get('/api/info', (_req, res) => res.set('Cache-Control', 'no-store').json({ mode: 'mock', source: 'mock', realAvailable: false, realReason: LIVE_REFUSAL, modes: ['mock', 'live'], live: { available: false, reason: LIVE_REFUSAL }, simulated: true }));
+  app.post('/api/mode', (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    const body = req.body ?? {};
+    if (typeof body !== 'object' || Array.isArray(body) || Object.keys(body).some((k) => k !== 'source')) return res.status(400).json({ error: 'bad_request', message: 'the only accepted body field is { "source": "mock" | "real" }' });
+    if (body.source !== 'mock' && body.source !== 'real') return res.status(400).json({ error: 'bad_source', message: 'source must be "mock" or "real"' });
+    if (body.source === 'real') return res.status(409).json({ error: 'real_not_available', message: LIVE_REFUSAL, source: 'mock' });
+    return res.json({ mode: 'mock', source: 'mock', realAvailable: false, realReason: LIVE_REFUSAL });
+  });
   app.get('/api/spec', (_req, res) => res.json({ ...SPEC_SOURCES, findings: FINDINGS }));
   app.get('/api/talk-track', (_req, res) => res.json({ talkTrack: TALK_TRACK }));
   app.get('/api/diagram', (req, res) => {

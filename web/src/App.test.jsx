@@ -30,7 +30,7 @@ const SCEN = [
 ];
 const SPEC = { protocol: "2025-11-25", read: "2026-10-22", pages: [{ id: "2025-11-25", url: "https://x.example/a", status: "read in full" }], notRead: ["basic/authorization"], draftDifferences: ["No -32042 in the draft."], findings: {} };
 const REASON = "Live mode is not available in this lab. Reason for the test.";
-const INFO = { mode: "mock", modes: ["mock", "live"], live: { available: false, reason: REASON }, simulated: true };
+const INFO = { mode: "mock", source: "mock", realAvailable: false, realReason: REASON, modes: ["mock", "live"], live: { available: false, reason: REASON }, simulated: true };
 const DIAGRAM = {
   schema: "diagram-studio/1", id: "elicitation-actors", title: "Who talks to whom",
   groups: { person: { label: "p", color: "dark" }, client: { label: "c", color: "blue" }, server: { label: "s", color: "red" }, browser: { label: "b", color: "grey" } },
@@ -55,6 +55,10 @@ function mockApi({ runs = [], gate = null } = {}) {
   globalThis.fetch = vi.fn(async (url, init) => {
     calls.push({ url, body: init?.body ? JSON.parse(init.body) : null, headers: init?.headers ?? {} });
     const clean = url.split("?")[0];
+    if (clean === "/api/mode") { // the server answers rule 19: {source:"real"} is a 409 with the honest reason
+      const refused = calls[calls.length - 1].body?.source === "real";
+      return { ok: !refused, status: refused ? 409 : 200, json: async () => (refused ? { error: "real_not_available", message: REASON, source: "mock" } : INFO) };
+    }
     const body = clean === "/api/shelf" ? { shelfUrl: null } : clean === "/api/scenarios" ? { scenarios: SCEN } : clean === "/api/spec" ? SPEC : clean === "/api/info" ? INFO : clean === "/api/diagram" ? DIAGRAM : clean === "/api/talk-track" ? { talkTrack: TALK } : clean === "/api/reset" ? { reset: true } : queue.shift();
     if (gate && (clean === "/api/runs" || clean.includes("/respond"))) await gate; // a run stays in flight until the test opens the gate
     return { ok: true, status: 200, json: async () => body };
@@ -93,17 +97,28 @@ describe("App", () => {
     render(<App />);
     await ready();
     const header = screen.getByRole("banner");
-    const mock = within(header).getByTestId("mode-mock"); const live = within(header).getByTestId("mode-live");
+    const mock = within(header).getByTestId("mode-mock"); const live = within(header).getByTestId("mode-real");
     expect(mock).toHaveAttribute("aria-pressed", "true"); expect(live).toHaveAttribute("aria-pressed", "false");
     expect(within(header).getByTestId("mode")).toHaveTextContent("Mode: mock");
     expect(screen.queryByTestId("live-refusal")).not.toBeInTheDocument();
     await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledWith("/api/info", expect.anything()));
+    expect(live).toHaveAttribute("aria-disabled", "true"); // Real is unavailable, with the reason as the tooltip
+    expect(live).toHaveAttribute("title", REASON);
     fireEvent.click(live);
     await waitFor(() => expect(screen.getByTestId("live-refusal")).toHaveTextContent(REASON));
     expect(mock).toHaveAttribute("aria-pressed", "true"); expect(live).toHaveAttribute("aria-pressed", "false"); // still mock
     expect(screen.getByTestId("banner")).toHaveTextContent(/MOCK mode/);
     fireEvent.click(mock);
     expect(screen.queryByTestId("live-refusal")).not.toBeInTheDocument();
+  });
+
+  it("POST /api/mode is called with {source:'real'} when Real is chosen, and the 409 reason is shown", async () => {
+    const calls = mockApi();
+    render(<App />);
+    await ready();
+    fireEvent.click(within(screen.getByRole("banner")).getByTestId("mode-real"));
+    await waitFor(() => expect(calls.some(({ url, body }) => String(url).endsWith("/api/mode") && body?.source === "real")).toBe(true));
+    await waitFor(() => expect(screen.getByTestId("live-refusal")).toHaveTextContent(REASON));
   });
 
   it("a form: shows the dialog with defaults, shows a blocked submit's error, then the outcome", async () => {
@@ -240,7 +255,7 @@ describe("Presenter mode", () => {
     const say = await screen.findByTestId("presenter-say");
     expect(say).toHaveTextContent("Say this about forms."); expect(say).not.toHaveTextContent("broken rules");
     expect(screen.getByTestId("banner")).toHaveTextContent(BANNER);
-    expect(screen.getByTestId("mode-live")).toBeInTheDocument();
+    expect(screen.getByTestId("mode-real")).toBeInTheDocument();
     expect(screen.getByRole("main")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Scenario"), { target: { value: "bad-idn-http" } });
     expect(screen.getByTestId("presenter-say")).toHaveTextContent("Say this about broken rules.");

@@ -35,10 +35,27 @@ describe('health and info', () => {
     const unknown = health(async () => { throw new Error('boom'); }); await unknown.ready;
     expect((await request(make(unknown)).get('/api/health')).body.state).toBe('unknown');
   });
-  it('info: always mock; Live is not available and carries the honest reason', async () => {
+  it('info: always mock; Real is not available and carries the honest reason (rule 19 shape)', async () => {
     const i = (await request(make()).get('/api/info')).body;
-    expect(i).toEqual({ mode: 'mock', modes: ['mock', 'live'], live: { available: false, reason: LIVE_REFUSAL }, simulated: true });
+    expect(i).toEqual({ mode: 'mock', source: 'mock', realAvailable: false, realReason: LIVE_REFUSAL, modes: ['mock', 'live'], live: { available: false, reason: LIVE_REFUSAL }, simulated: true });
     expect(LIVE_REFUSAL).toMatch(/not available/);
+  });
+  it('mode: POST /api/mode takes exactly {source}, refuses real with 409 and the honest reason, and never changes the mode', async () => {
+    const app = make();
+    const mock = (await request(app).post('/api/mode').send({ source: 'mock' }));
+    expect(mock.status).toBe(200);
+    expect(mock.body).toEqual({ mode: 'mock', source: 'mock', realAvailable: false, realReason: LIVE_REFUSAL });
+    const real = await request(app).post('/api/mode').send({ source: 'real' });
+    expect(real.status).toBe(409);
+    expect(real.body.error).toBe('real_not_available');
+    expect(real.body.message).toBe(LIVE_REFUSAL);
+    expect(real.body.source).toBe('mock');
+    expect((await request(app).get('/api/info')).body.source).toBe('mock', 'a refused switch leaves the mode unchanged');
+    for (const body of [{ source: 'live' }, { source: 1 }, { source: null }, {}, { source: 'mock', extra: 1 }, { mode: 'mock' }, []]) {
+      expect((await request(app).post('/api/mode').send(body)).status).toBe(400, JSON.stringify(body));
+    }
+    expect((await request(app).post('/api/mode')).status).toBe(400);
+    expect((await request(app).get('/api/mode')).status).toBe(404, 'there is one toggle endpoint, POST /api/mode');
   });
   it('cites its spec sources and lists what it did not read', async () => {
     const s = (await request(make()).get('/api/spec')).body;

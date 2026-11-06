@@ -2,7 +2,7 @@ import { workspaceFetch } from "./workspace.js";
 
 async function j(res) {
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(body.reason || body.error || `HTTP ${res.status}`), { code: body.error });
+  if (!res.ok) throw Object.assign(new Error(body.message || body.reason || body.error || `HTTP ${res.status}`), { code: body.error });
   return body;
 }
 const get = (url) => workspaceFetch(url, { method: "GET" }).then(j);
@@ -14,4 +14,5 @@ export const getDiagram = (name) => get(`/api/diagram?name=${encodeURIComponent(
 export const getTalkTrack = () => get("/api/talk-track");
 export const startRun = (body) => post("/api/runs", body);
 export const respond = (id, action, content) => post(`/api/runs/${id}/respond`, { action, content });
+export const postMode = (source) => post("/api/mode", { source });
 export const resetServer = () => post("/api/reset", {});
