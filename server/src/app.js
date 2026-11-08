@@ -47,6 +47,7 @@ export function createApp({ health = createHealth(), workspaces = createWorkspac
     if (body.source === 'real') return res.status(409).json({ error: 'real_not_available', message: LIVE_REFUSAL, source: 'mock' });
     return res.json({ mode: 'mock', source: 'mock', realAvailable: false, realReason: LIVE_REFUSAL });
   });
+  app.get('/api/shelf', (_req, res) => { res.set('Cache-Control', 'no-store'); res.json(shelfInfo()); }); // the header "Shelf" button; before the /api 404 and outside the web-build check
   app.get('/api/spec', (_req, res) => res.json({ ...SPEC_SOURCES, findings: FINDINGS }));
   app.get('/api/talk-track', (_req, res) => res.json({ talkTrack: TALK_TRACK }));
   app.get('/api/diagram', (req, res) => {
@@ -74,7 +75,6 @@ export function createApp({ health = createHealth(), workspaces = createWorkspac
   app.use('/api', (_req, res) => res.status(404).json({ error: 'not_found' }));
   if (fs.existsSync(path.join(webDist, 'index.html'))) {
     app.use(express.static(webDist));
-app.get('/api/shelf', (_req, res) => { res.set('Cache-Control', 'no-store'); res.json(shelfInfo()); }); // the header "Shelf" button
     app.get('*', (_req, res) => res.sendFile(path.join(webDist, 'index.html')));
   }
   // The last two handlers catch everything that is left, for every method and every path: Express's default answers ("Cannot POST /<path>")

@@ -214,3 +214,18 @@ describe('rule 13: one workspace never touches another', () => {
     t = 5000; spaces.get('z'); expect(spaces.size()).toBe(1);
   });
 });
+
+describe('shelf link', () => {
+  it('serves /api/shelf from SHELF_URL with no web build, and refuses POST', async () => {
+    const prev = process.env.SHELF_URL;
+    process.env.SHELF_URL = 'https://shelf.example:8443/';
+    try {
+      const res = await request(make()).get('/api/shelf');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ shelfUrl: 'https://shelf.example:8443' });
+      expect((await request(make()).post('/api/shelf').send({})).status).not.toBe(200);
+    } finally {
+      if (prev === undefined) delete process.env.SHELF_URL; else process.env.SHELF_URL = prev;
+    }
+  });
+});
