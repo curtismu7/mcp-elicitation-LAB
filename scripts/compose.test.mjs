@@ -55,5 +55,9 @@ test('the container is locked down: read-only fs, no capabilities, no new privil
 });
 
 test('the compose file gives the container no outbound allowlist and no bare MODE: the lab makes no outbound call', () => {
-  assert.doesNotMatch(here('docker-compose.yml'), /ALLOWED_HOSTS|PEP_URL|MINT_URL|extra_hosts|^\s*MODE:/m);
+  assert.doesNotMatch(here('docker-compose.yml'), /(?<!LAB_)ALLOWED_HOSTS|PEP_URL|MINT_URL|extra_hosts|^\s*MODE:/m);
+});
+
+test('compose defaults LAB_ALLOWED_HOSTS (inbound Host names, not an outbound list) to the name the family lab-proxy sends', () => {
+  assert.match(here('docker-compose.yml'), /^ {6}LAB_ALLOWED_HOSTS: \$\{LAB_ALLOWED_HOSTS:-mcp-elicitation-lab\.local\.ping-devops\.com\}$/m);
 });

@@ -47,7 +47,7 @@ All standalone apps read one optional settings file, `~/Development/.env` (mode 
 
 - `MEL_LAB_MODE` (optional): `mock` (the default). `live` is refused with a message. A bare `MODE` is never read.
 
-The shared file holds no `PORT`. Run-time knobs go in the shell, not in the file: `PORT` (see below) and `MEL_LAB_BIND` (loopback unless you set it on purpose; the container does). The lab holds no credentials for anything, so no secret belongs in the file.
+The shared file holds no `PORT`. Run-time knobs go in the shell, not in the file: `PORT` (see below) and `MEL_LAB_BIND` (loopback unless you set it on purpose; the container does). `LAB_ALLOWED_HOSTS` is a comma list of host names (no ports) the lab answers to besides loopback, as `<name>:<PORT>`; unset means loopback only. Docker defaults it to the name the family lab-proxy sends in Host (see `docker-compose.yml`), and on that Host only a write whose Origin equals `X-Forwarded-Proto://X-Forwarded-Host` counts as same-origin. The lab holds no credentials for anything, so no secret belongs in the file.
 
 ## Ports, and what to do if the port is taken
 
@@ -100,7 +100,7 @@ Runs the server (vitest), the web UI (vitest) and the repo checks (`node --test 
 - **The port is taken:** see "Ports, and what to do if the port is taken" above.
 - **`refusing to start: mode`:** `MEL_LAB_MODE` is set to `live` (or something else). This lab has only Mock; unset it.
 - **The page says "Could not load" or the diagram is empty:** the API is not running, or you opened the Vite dev server without the API. Run `npm start` and open port 6800, or `npm run dev`.
-- **A request is refused with 403 `bad_host` or `cross_origin`:** the lab only answers a loopback Host and same-origin writes. Open it as http://127.0.0.1:6800/ and do not put a proxy in front.
+- **A request is refused with 403 `bad_host` or `cross_origin`:** the lab only answers a loopback Host (or a `LAB_ALLOWED_HOSTS` name, which is how the family lab-proxy reaches it) and same-origin writes. Open it as http://127.0.0.1:6800/ or through the family launcher, and do not put any other proxy in front.
 - **Docker health stays "starting":** run `docker compose logs`; the container needs port 6800 free inside and `HOST_PORT` free on the host.
 
 ## Ownership
