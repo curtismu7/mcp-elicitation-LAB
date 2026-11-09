@@ -13,6 +13,8 @@ services:
       SHELF_URL: ${SHELF_URL:-http://127.0.0.1:4400}
       PORT: "6800"
       MEL_LAB_BIND: 0.0.0.0
+      # Names besides loopback the lab answers to (as <name>:6800). The default is the Host the family lab-proxy sends.
+      LAB_ALLOWED_HOSTS: ${LAB_ALLOWED_HOSTS:-mcp-elicitation-lab.local.ping-devops.com}
     read_only: true
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]

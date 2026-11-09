@@ -58,7 +58,9 @@ test('no host in shipped text except .example / .invalid / loopback (and the two
       hits.push(`${path.relative(root, p)}: ${h}`);
     }
     if (/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(t) && !/content-pack\.json$/.test(p)) hits.push(`${path.relative(root, p)}: a UUID-shaped id`);
-    if (/\/Users\/|cmuir_pingcorp|ping-devops/i.test(t)) hits.push(`${path.relative(root, p)}: a personal path or name`);
+    // The one exception: compose's LAB_ALLOWED_HOSTS default names the Host the family lab-proxy sends.
+    const scrubbed = path.relative(root, p) === 'docker-compose.yml' ? t.replace(/^ {6}LAB_ALLOWED_HOSTS: \$\{LAB_ALLOWED_HOSTS:-mcp-elicitation-lab\.local\.ping-devops\.com\}$/m, '') : t;
+    if (/\/Users\/|cmuir_pingcorp|ping-devops/i.test(scrubbed)) hits.push(`${path.relative(root, p)}: a personal path or name`);
   }
   assert.deepEqual(hits, []);
 });

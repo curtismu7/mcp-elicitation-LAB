@@ -5,7 +5,7 @@ import express from 'express';
 import { createWorkspaces, workspaceFrom } from './workspaces.js';
 import { listScenarios } from './scenarios.js';
 import { FINDINGS } from './lint.js';
-import { hostCheck, sameOriginWrites } from './safety.js';
+import { makeHostCheck, makeSameOriginWrites } from './safety.js';
 import { createHealth } from './health.js';
 import { LIVE_REFUSAL } from './config.js';
 import { diagramByName } from './diagramData.js';
@@ -17,11 +17,11 @@ export { DEMO, SPEC_SOURCES };
 
 const WEB_DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../web/dist');
 
-export function createApp({ health = createHealth(), workspaces = createWorkspaces(), webDist = WEB_DIST } = {}) {
+export function createApp({ health = createHealth(), workspaces = createWorkspaces(), webDist = WEB_DIST, proxyHosts = new Set() } = {}) {
   const app = express();
   app.disable('x-powered-by');
-  app.use(hostCheck);
-  app.use(sameOriginWrites);
+  app.use(makeHostCheck(proxyHosts));
+  app.use(makeSameOriginWrites(proxyHosts));
   app.use((_req, res, next) => { res.set('X-Content-Type-Options', 'nosniff'); next(); });
   app.use(express.json({ limit: '100kb' }));
 
