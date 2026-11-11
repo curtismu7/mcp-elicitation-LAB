@@ -17,4 +17,4 @@ Tester-tier standalone app (catalog D37), mock only. An MCP server mid-tool-call
   - Run buttons use `aria-disabled`, not `disabled`, so focus is kept. P / Esc presenter keys ignore modifier keys and fields.
   - Do not use `process.env.MODE`, EC `generateKeyPair`, or any k8s/SE code (deferred by the owner).
   - Never write into another repo.
-- Never commit `.env`. Commits end with the Co-Authored-By trailer; the gitleaks pre-commit hook runs on every commit. Run check-drift, check-css and conformance by hand.
+- Never commit `.env`. No AI attribution anywhere (owner, 2026-11-07): no Co-Authored-By trailer and no "Generated with" line in commits, PR bodies or files; CI runs `scripts/check-no-ai-attribution.sh`; the gitleaks pre-commit hook runs on every commit. Run check-drift, check-css and conformance by hand.
