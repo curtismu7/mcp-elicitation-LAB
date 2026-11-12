@@ -7,7 +7,11 @@ import SpecPanel from "./SpecPanel.jsx";
 import TalkTrack from "./TalkTrack.jsx";
 import { getDiagram, getInfo, getScenarios, getSpec, getTalkTrack, postMode, resetServer, respond, startRun } from "./api.js";
 import ShelfLink from "./components/ShelfLink.jsx";
+import TopMenu, { applyFontSize } from "./top-menu/TopMenu.jsx";
 import { workspaceId } from "./workspace.js";
+import fs from "node:fs";
+
+const LAB_VERSION = (() => { try { return JSON.parse(fs.readFileSync(new URL("../../package.json", import.meta.url), "utf8")).version || null; } catch { return null; } })();
 
 const SPEEDS = [0.5, 1, 2, 4];
 const CAPS = { default: undefined, both: { form: {}, url: {} }, form: { form: {} }, url: { url: {} }, empty: {}, none: null };
@@ -46,9 +50,11 @@ export default function App() {
   const [presenter, setPresenter] = useState(false);
   const [openKey, setOpenKey] = useState(null);
   const [theme, setTheme] = useState(initialTheme);
+  const [fontStep, setFontStep] = useState(() => { try { const f = localStorage.getItem("mce.font"); return ["S", "M", "L"].includes(f) ? f : "M"; } catch { return "M"; } });
   const timer = useRef(null);
 
   useEffect(() => { if (theme === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = theme; }, [theme]);
+  useEffect(() => { applyFontSize(fontStep); try { localStorage.setItem("mce.font", fontStep); } catch { /* not remembered */ } }, [fontStep]);
 
   // Rule 19: Real asks the server, which refuses with 409 and the honest reason; the page stays in Mock and the data is reloaded.
   const chooseReal = () => {
@@ -123,21 +129,18 @@ export default function App() {
             {!presenter && <p className="head__intro">An MCP server in the middle of a tool call needs more from the person. It asks the client, in <strong>form</strong> mode or <strong>URL</strong> mode, and the person can accept, decline or cancel. Pick a scenario, change what the client declares, and watch the messages, the dialog and the rules.</p>}
           </div>
           <div className="head__tools">
-            <ShelfLink headers={() => ({ "x-workspace": workspaceId() })} />
-            <div className="seg" role="group" aria-label="Mode">
-              <button type="button" aria-pressed="true" onClick={() => setLiveMsg("")} data-testid="mode-mock">Mock</button>
-              <button type="button" aria-pressed="false" aria-disabled={info?.realAvailable === false ? "true" : undefined}
-                title={info?.realAvailable === false && info?.realReason ? info.realReason : undefined}
-                onClick={chooseReal} data-testid="mode-real">Real</button>
-            </div>
+            <TopMenu
+              mode={{ value: "mock", onChange: (v) => { if (v === "real") chooseReal(); }, realAvailable: info ? info.realAvailable : null, realHint: info?.realReason || LIVE_FALLBACK }}
+              theme={{ value: theme, onChange: pickTheme }}
+              fontSize={{ value: fontStep, onChange: setFontStep }}
+              present={{ active: presenter, onToggle: () => setPresenter((v) => !v), label: "Presenter (P)" }}
+              help={{ href: "https://github.com/curtismu7/mcp-elicitation-LAB#readme" }}
+              version={LAB_VERSION}
+              onReset={onReset}
+            >
+              <ShelfLink headers={() => ({ "x-workspace": workspaceId() })} />
+            </TopMenu>
             <span className="chip" data-testid="mode">Mode: mock (in-process mocks)</span>
-            <label className="shell-theme">Theme
-              <select value={theme} onChange={(e) => pickTheme(e.target.value)}>
-                {THEMES.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-              </select>
-            </label>
-            <button type="button" onClick={onReset} data-testid="reset">Reset</button>
-            <button type="button" aria-pressed={presenter} onClick={() => setPresenter((v) => !v)} data-testid="presenter">{presenter ? "Exit presenter (Esc)" : "Presenter (P)"}</button>
           </div>
         </div>
         {liveMsg && <p className="field-error" role="status" data-testid="live-refusal">{liveMsg}</p>}

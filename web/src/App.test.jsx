@@ -92,31 +92,29 @@ describe("App", () => {
     await waitFor(() => expect(screen.getByLabelText("Scenario")).toHaveValue("bad-idn-http"));
   });
 
-  it("the Mock | Live toggle is in the header: Mock is on, and Live is refused with the honest reason and changes nothing", async () => {
+  it("the Mode dropdown is in the header: Mock is on, and Live is refused with the honest reason and changes nothing", async () => {
     mockApi();
     render(<App />);
     await ready();
     const header = screen.getByRole("banner");
-    const mock = within(header).getByTestId("mode-mock"); const live = within(header).getByTestId("mode-real");
-    expect(mock).toHaveAttribute("aria-pressed", "true"); expect(live).toHaveAttribute("aria-pressed", "false");
+    const select = within(header).getByTestId("mode-select");
+    expect(select).toHaveValue("mock");
     expect(within(header).getByTestId("mode")).toHaveTextContent("Mode: mock");
     expect(screen.queryByTestId("live-refusal")).not.toBeInTheDocument();
     await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledWith("/api/info", expect.anything()));
-    expect(live).toHaveAttribute("aria-disabled", "true"); // Real is unavailable, with the reason as the tooltip
-    expect(live).toHaveAttribute("title", REASON);
-    fireEvent.click(live);
+    const realOption = within(select).getByRole("option", { name: "Real" });
+    expect(realOption).toBeDisabled(); // Real is unavailable
+    fireEvent.change(select, { target: { value: "real" } });
     await waitFor(() => expect(screen.getByTestId("live-refusal")).toHaveTextContent(REASON));
-    expect(mock).toHaveAttribute("aria-pressed", "true"); expect(live).toHaveAttribute("aria-pressed", "false"); // still mock
+    expect(select).toHaveValue("mock"); // still mock
     expect(screen.getByTestId("banner")).toHaveTextContent(/MOCK mode/);
-    fireEvent.click(mock);
-    expect(screen.queryByTestId("live-refusal")).not.toBeInTheDocument();
   });
 
-  it("POST /api/mode is called with {source:'real'} when Real is chosen, and the 409 reason is shown", async () => {
+  it("choosing Real in the Mode dropdown POSTs /api/mode with {source:'real'}, and the 409 reason is shown", async () => {
     const calls = mockApi();
     render(<App />);
     await ready();
-    fireEvent.click(within(screen.getByRole("banner")).getByTestId("mode-real"));
+    fireEvent.change(within(screen.getByRole("banner")).getByTestId("mode-select"), { target: { value: "real" } });
     await waitFor(() => expect(calls.some(({ url, body }) => String(url).endsWith("/api/mode") && body?.source === "real")).toBe(true));
     await waitFor(() => expect(screen.getByTestId("live-refusal")).toHaveTextContent(REASON));
   });
@@ -255,7 +253,7 @@ describe("Presenter mode", () => {
     const say = await screen.findByTestId("presenter-say");
     expect(say).toHaveTextContent("Say this about forms."); expect(say).not.toHaveTextContent("broken rules");
     expect(screen.getByTestId("banner")).toHaveTextContent(BANNER);
-    expect(screen.getByTestId("mode-real")).toBeInTheDocument();
+    expect(screen.getByTestId("mode-select")).toBeInTheDocument();
     expect(screen.getByRole("main")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Scenario"), { target: { value: "bad-idn-http" } });
     expect(screen.getByTestId("presenter-say")).toHaveTextContent("Say this about broken rules.");
