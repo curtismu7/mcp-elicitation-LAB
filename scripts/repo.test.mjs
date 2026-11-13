@@ -118,7 +118,7 @@ test('app CSS follows the CSS standard: tokens only, no dark-mode media query, n
 });
 
 test('the web code has no style attributes, no <em>/<i>, no mermaid, no credential field, and Run buttons use aria-disabled', () => {
-  const web = shipped().filter((p) => p.includes(`${path.sep}web${path.sep}src${path.sep}`) && /\.jsx$/.test(p) && !/\.test\./.test(p));
+  const web = shipped().filter((p) => p.includes(`${path.sep}web${path.sep}src${path.sep}`) && /\.jsx$/.test(p) && !/\.test\./.test(p) && !p.includes(`${path.sep}top-menu${path.sep}`)); // the vendored shared TopMenu is pinned by hash, not re-checked here
   assert.ok(web.length >= 6);
   for (const p of web) {
     const t = fs.readFileSync(p, 'utf8');
