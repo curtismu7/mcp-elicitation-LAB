@@ -6,6 +6,7 @@ import Findings from "./Findings.jsx";
 import SpecPanel from "./SpecPanel.jsx";
 import TalkTrack from "./TalkTrack.jsx";
 import { getDiagram, getInfo, getScenarios, getSpec, getTalkTrack, postMode, resetServer, respond, startRun } from "./api.js";
+import Json from "./components/JsonPane.jsx";
 import ShelfLink from "./components/ShelfLink.jsx";
 import TopMenu, { applyFontSize } from "./top-menu/TopMenu.jsx";
 import { workspaceId } from "./workspace.js";
@@ -183,7 +184,8 @@ export default function App() {
         {run && (
           <>
             <h2>Messages <span className="status" data-state={run.status}>{STATUS[run.status] ?? run.status}</span></h2>
-            <p className="muted">Client declared: <code>{run.caps === null ? "no elicitation capability" : JSON.stringify({ elicitation: run.caps })}</code> trace {run.traceId}</p>
+            <p className="muted">Client declared{run.caps === null ? <>: <code>no elicitation capability</code></> : " these capabilities:"} trace {run.traceId}</p>
+            {run.caps !== null && <Json value={{ elicitation: run.caps }} label="Client capabilities" hot={["elicitation", "form", "url"]} />}
             <Transcript transcript={transcript} shown={shown} />
             {run.outcome && shown >= transcript.length && <p className="outcome" role="status" data-testid="outcome"><strong>Outcome:</strong> {run.outcome}</p>}
             {shown >= transcript.length && <Findings findings={run.findings} expected={sc?.expectedFindings} />}

@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor, cleanup, within } from "@testing-library/react";
 import App, { BANNER } from "./App.jsx";
 import { buildGraph, linkOf } from "./FlowDiagram.jsx";
 import { forgetWorkspace, workspaceId } from "./workspace.js";
+import { setJsonView } from "./components/JsonPane.jsx";
 
 // React Flow measures the DOM, which jsdom does not have: a small stand-in that keeps real node state, so a drag (a click on a box moves it +50)
 // and Reset can be tested. The real library is exercised in the browser check.
@@ -22,6 +23,8 @@ vi.mock("@xyflow/react", async () => {
     ),
   };
 });
+// The Form | JSON choice is shared module state: every test starts on Form and says which view it reads.
+beforeEach(() => { setJsonView("form"); });
 afterEach(() => { cleanup(); window.location.hash = ""; });
 
 const SCEN = [
@@ -161,6 +164,7 @@ describe("App", () => {
   });
 
   it("shows raw JSON-RPC for each message with its traceparent", async () => {
+    setJsonView("raw");
     const done = { ...base, status: "done", pending: null, outcome: "ok", transcript: [T(1, "client→server", "request", { method: "initialize", json: { jsonrpc: "2.0", id: 0, method: "initialize" } })] };
     mockApi({ runs: [done] });
     render(<App />);
@@ -168,6 +172,39 @@ describe("App", () => {
     fireEvent.click(runButton());
     await waitFor(() => expect(screen.getByLabelText("Message 1")).toHaveTextContent('"method": "initialize"'));
     expect(screen.getByText(/traceparent 00-/)).toBeInTheDocument();
+  });
+
+  it("each message is a Form | JSON pane: Form first, the JSON button shows the exact JSON, the capabilities pane follows the same choice", async () => {
+    const done = { ...base, status: "done", pending: null, outcome: "ok", transcript: [T(1, "client→server", "request", { method: "initialize", json: { jsonrpc: "2.0", id: 0, method: "initialize" } })] };
+    mockApi({ runs: [done] });
+    render(<App />);
+    await ready();
+    fireEvent.click(runButton());
+    await waitFor(() => expect(screen.getByLabelText("Message 1")).toBeInTheDocument());
+    const msg = screen.getByLabelText("Message 1");
+    expect(msg.tagName).not.toBe("PRE"); // Form view: a form, not JSON text
+    expect(msg).toHaveTextContent("initialize");
+    expect(msg).not.toHaveTextContent('"method"');
+    const caps = screen.getByLabelText("Client capabilities");
+    expect(caps).toHaveTextContent("elicitation");
+    const group = screen.getByRole("group", { name: "Message 1 view" });
+    expect(within(group).getAllByRole("button").map((b) => b.textContent)).toEqual(["Form", "JSON"]);
+    fireEvent.click(within(group).getByRole("button", { name: "JSON" }));
+    expect(screen.getByLabelText("Message 1").tagName).toBe("PRE");
+    expect(screen.getByLabelText("Message 1")).toHaveTextContent('"method": "initialize"');
+    expect(screen.getByLabelText("Client capabilities")).toHaveTextContent('"elicitation": {');
+    expect(screen.getByLabelText("Client capabilities").tagName).toBe("PRE");
+  });
+
+  it("a client that declared nothing shows the plain sentence, not a JSON pane", async () => {
+    const done = { ...base, caps: null, status: "done", pending: null, outcome: "ok", transcript: [T(1, "client→server", "request", { method: "initialize", json: { jsonrpc: "2.0", id: 0, method: "initialize" } })] };
+    mockApi({ runs: [done] });
+    render(<App />);
+    await ready();
+    fireEvent.click(runButton());
+    await waitFor(() => expect(screen.getByLabelText("Message 1")).toBeInTheDocument());
+    expect(screen.getByText("no elicitation capability")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Client capabilities")).not.toBeInTheDocument();
   });
 });
 
