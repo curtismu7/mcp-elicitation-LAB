@@ -12,6 +12,18 @@ import { diagramByName } from './diagramData.js';
 import { TALK_TRACK } from './talkTrack.js';
 import { DEMO, SPEC_SOURCES } from './spec.js';
 import { shelfInfo } from './shelfLink.js';
+import { readFileSettings, doorConfig, createRealDoor } from './gatewayReal.js';
+
+// Real mode = the shared gateway hop: an agent key from the shared settings file calling a live Privilege door.
+// The environment wins over the file: MEL_* variables overlay the parsed file text.
+export function realDoorFrom(env = process.env) {
+  const p = env.STANDALONE_ENV || `${env.HOME || ''}/Development/.env`;
+  let text = '';
+  try { text = fs.readFileSync(p, 'utf8'); } catch { /* the environment may still carry the keys */ }
+  for (const [k, v] of Object.entries(env)) if (k.startsWith('MEL_GW_') && v) text += `\n${k}=${v}`;
+  const cfg = doorConfig(text, 'MEL');
+  return cfg.ok ? createRealDoor({ config: cfg, clientInfo: { name: 'mcp-elicitation-lab', version: '0.1.0' } }) : null;
+}
 
 export { DEMO, SPEC_SOURCES };
 
@@ -44,7 +56,11 @@ export function createApp({ health = createHealth(), workspaces = createWorkspac
     const body = req.body ?? {};
     if (typeof body !== 'object' || Array.isArray(body) || Object.keys(body).some((k) => k !== 'source')) return res.status(400).json({ error: 'bad_request', message: 'the only accepted body field is { "source": "mock" | "real" }' });
     if (body.source !== 'mock' && body.source !== 'real') return res.status(400).json({ error: 'bad_source', message: 'source must be "mock" or "real"' });
-    if (body.source === 'real') return res.status(409).json({ error: 'real_not_available', message: LIVE_REFUSAL, source: 'mock' });
+    if (body.source === 'real') {
+      const door = realDoorFrom();
+      if (!door) return res.status(409).json({ error: 'real_not_available', message: LIVE_REFUSAL, source: 'mock' });
+      return res.json({ source: 'real', realAvailable: true, doors: door.apps, gateway: door.origin });
+    }
     return res.json({ mode: 'mock', source: 'mock', realAvailable: false, realReason: LIVE_REFUSAL });
   });
   app.get('/api/shelf', (_req, res) => { res.set('Cache-Control', 'no-store'); res.json(shelfInfo()); }); // the header "Shelf" button; before the /api 404 and outside the web-build check
@@ -85,6 +101,20 @@ export function createApp({ health = createHealth(), workspaces = createWorkspac
     if (err?.type === 'entity.parse.failed') return res.status(400).json({ error: 'bad_json' });
     if (err?.type === 'entity.too.large') return res.status(413).json({ error: 'payload_too_large' });
     return res.status(500).json({ error: 'internal_error' });
+  });
+
+  // One real gateway check: tools/list through the door, then the gateway's refusal for a tool nothing grants.
+  api.post('/gateway-check', async (req, res) => {
+    const door = realDoorFrom();
+    if (!door) return res.status(409).json({ error: 'real_not_available', message: 'Real is not configured (the MEL_* settings are missing).' });
+    if (req.body && Object.keys(req.body).some((k) => !['app', 'caller'].includes(k))) return res.status(400).json({ error: 'bad_request', detail: 'the only accepted body fields are { "app", "caller" }' });
+    const app = String(req.body?.app || door.apps[0]);
+    if (!door.apps.includes(app)) return res.status(400).json({ error: 'bad_app', detail: `app must be one of ${door.apps.join(', ')}` });
+    const caller = req.body?.caller && door.callers.some((c) => c.id === req.body.caller) ? req.body.caller : door.callers[0].id;
+    const listing = await door.list(app, caller);
+    const out = { app, caller, gateway: door.origin, listing };
+    if (listing.ok) out.refusal = await door.call(app, caller, 'mcp_elicitation_refusal_probe_tool', {});
+    res.json(out);
   });
   return app;
 }
