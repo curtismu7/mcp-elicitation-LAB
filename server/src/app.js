@@ -13,6 +13,7 @@ import { TALK_TRACK } from './talkTrack.js';
 import { DEMO, SPEC_SOURCES } from './spec.js';
 import { shelfInfo } from './shelfLink.js';
 import { readFileSettings, doorConfig, createRealDoor } from './gatewayReal.js';
+import { setAllowedOrigins } from './netguard.js';
 
 // Real mode = the shared gateway hop: an agent key from the shared settings file calling a live Privilege door.
 // The environment wins over the file: MEL_* variables overlay the parsed file text.
@@ -88,6 +89,21 @@ export function createApp({ health = createHealth(), workspaces = createWorkspac
     try { return res.json(await req.lab.respond(req.params.id, { action, content })); } catch (e) { return fail(res, next, e); }
   });
 
+  // One real gateway check: tools/list through the door, then the gateway's refusal for a tool nothing grants.
+  app.post('/api/gateway-check', async (req, res) => {
+    const door = realDoorFrom();
+    if (!door) return res.status(409).json({ error: 'real_not_available', message: 'Real is not configured (the MEL_* settings are missing).' });
+    if (req.body && Object.keys(req.body).some((k) => !['app', 'caller'].includes(k))) return res.status(400).json({ error: 'bad_request', detail: 'the only accepted body fields are { "app", "caller" }' });
+    const app = String(req.body?.app || door.apps[0]);
+    if (!door.apps.includes(app)) return res.status(400).json({ error: 'bad_app', detail: `app must be one of ${door.apps.join(', ')}` });
+    const caller = req.body?.caller && door.callers.some((c) => c.id === req.body.caller) ? req.body.caller : door.callers[0].id;
+    setAllowedOrigins([door.origin]);
+    const listing = await door.list(app, caller);
+    const out = { app, caller, gateway: door.origin, listing };
+    if (listing.ok) out.refusal = await door.call(app, caller, 'mcp_elicitation_refusal_probe_tool', {});
+    res.json(out);
+  });
+
   app.use('/api', (_req, res) => res.status(404).json({ error: 'not_found' }));
   if (fs.existsSync(path.join(webDist, 'index.html'))) {
     app.use(express.static(webDist));
@@ -103,18 +119,5 @@ export function createApp({ health = createHealth(), workspaces = createWorkspac
     return res.status(500).json({ error: 'internal_error' });
   });
 
-  // One real gateway check: tools/list through the door, then the gateway's refusal for a tool nothing grants.
-  api.post('/gateway-check', async (req, res) => {
-    const door = realDoorFrom();
-    if (!door) return res.status(409).json({ error: 'real_not_available', message: 'Real is not configured (the MEL_* settings are missing).' });
-    if (req.body && Object.keys(req.body).some((k) => !['app', 'caller'].includes(k))) return res.status(400).json({ error: 'bad_request', detail: 'the only accepted body fields are { "app", "caller" }' });
-    const app = String(req.body?.app || door.apps[0]);
-    if (!door.apps.includes(app)) return res.status(400).json({ error: 'bad_app', detail: `app must be one of ${door.apps.join(', ')}` });
-    const caller = req.body?.caller && door.callers.some((c) => c.id === req.body.caller) ? req.body.caller : door.callers[0].id;
-    const listing = await door.list(app, caller);
-    const out = { app, caller, gateway: door.origin, listing };
-    if (listing.ok) out.refusal = await door.call(app, caller, 'mcp_elicitation_refusal_probe_tool', {});
-    res.json(out);
-  });
   return app;
 }
