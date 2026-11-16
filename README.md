@@ -67,7 +67,7 @@ The server refuses a PORT outside 6800-6849 or on that reserved list.
 
 ## Mock and live modes
 
-The header has a **Mock | Live** toggle on the page, with the current mode beside it ("Mode: mock") and the same mode named in the banner, which also shows in presenter mode. Mock is on. Clicking Live shows why it is not available and changes nothing: no request is made and the banner still says MOCK. The server answers `GET /api/info` with `mode: "mock"` and the reason Live is refused.
+The header has a **Mock | Live** toggle on the page, with the current mode as a MOCK badge beside the app name and the same mode named in the banner, which also shows in presenter mode. Mock is on. Clicking Live shows why it is not available and changes nothing: no request is made and the banner still says MOCK. The server answers `GET /api/info` with `mode: "mock"` and the reason Live is refused.
 
 ## Health, doctor and reset
 

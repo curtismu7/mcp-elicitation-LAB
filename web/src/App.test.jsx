@@ -102,7 +102,7 @@ describe("App", () => {
     const header = screen.getByRole("banner");
     const select = within(header).getByTestId("mode-select");
     expect(select).toHaveValue("mock");
-    expect(within(header).getByTestId("mode")).toHaveTextContent("Mode: mock");
+    expect(within(header).getByTestId("mode")).toHaveTextContent("MOCK mode: in-process mocks");
     expect(screen.queryByTestId("live-refusal")).not.toBeInTheDocument();
     await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledWith("/api/info", expect.anything()));
     const realOption = within(select).getByRole("option", { name: "Real" });
@@ -130,7 +130,7 @@ describe("App", () => {
     render(<App />);
     await ready();
     fireEvent.click(runButton());
-    const dialog = await screen.findByRole("group", { name: "Client dialog" });
+    const dialog = await screen.findByRole("dialog", { name: "Client dialog" });
     expect(dialog).toHaveTextContent("Example MCP");
     expect(screen.getByLabelText(/Party size/)).toHaveValue(2); // default pre-populated
     fireEvent.change(screen.getByLabelText(/Party size/), { target: { value: "99" } });
@@ -142,7 +142,7 @@ describe("App", () => {
     fireEvent.change(screen.getByLabelText(/Party size/), { target: { value: "3" } });
     fireEvent.click(screen.getByRole("button", { name: /Submit/ }));
     await waitFor(() => expect(screen.getByTestId("outcome")).toHaveTextContent("Booked 3"));
-    expect(screen.queryByRole("group", { name: "Client dialog" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Client dialog" })).not.toBeInTheDocument();
   });
 
   it("a URL: shows the FULL url, the highlighted domain, warnings, and consent buttons; declining sends decline", async () => {
@@ -153,7 +153,7 @@ describe("App", () => {
     await ready();
     fireEvent.change(screen.getByLabelText("Scenario"), { target: { value: "bad-idn-http" } });
     fireEvent.click(runButton());
-    const dialog = await screen.findByRole("group", { name: "Client dialog" });
+    const dialog = await screen.findByRole("dialog", { name: "Client dialog" });
     expect(screen.getByLabelText("Full URL")).toHaveTextContent("http://xn--exmple-cua.mcp.example/login");
     expect(dialog).toHaveTextContent(/Domain:\s*xn--exmple-cua\.mcp\.example/);
     expect(screen.getAllByRole("alert").map((a) => a.textContent).join(" ")).toMatch(/Punycode.*not HTTPS/);

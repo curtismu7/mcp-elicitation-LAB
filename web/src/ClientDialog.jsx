@@ -29,21 +29,10 @@ export default function ClientDialog({ pending, onRespond, busy }) {
   // aria-disabled, not disabled: the button keeps keyboard focus while a request is in flight, and a press during that time does nothing.
   const act = (action) => () => { if (!busy) onRespond(action); };
   return (
-    <section className="dialog" role="group" aria-label="Client dialog">
+    <section className="dialog" role="dialog" aria-label="Client dialog">
       <p className="dialog__who"><strong>{pending.server.name}</strong> v{pending.server.version} is asking</p>
       <p>{pending.message}</p>
-      {!isUrl && (
-        <form noValidate onSubmit={(e) => { e.preventDefault(); if (!busy) onRespond("accept", clean()); }}>
-          {pending.fields.map((f) => <Field key={f.name} f={f} value={values[f.name]} error={pending.errors?.[f.name]} onChange={(v) => setValues((s) => ({ ...s, [f.name]: v }))} />)}
-          {pending.errors && Object.keys(pending.errors).some((k) => !pending.fields.some((f) => f.name === k)) && <p className="field-error" role="alert">{Object.entries(pending.errors).filter(([k]) => !pending.fields.some((f) => f.name === k)).map(([k, m]) => `${k}: ${m}`).join("; ")}</p>}
-          <div className="dialog__buttons">
-            <button type="submit" className="primary" aria-disabled={busy}>Submit (accept)</button>
-            <button type="button" aria-disabled={busy} onClick={act("decline")}>Decline</button>
-            <button type="button" aria-disabled={busy} onClick={act("cancel")}>Cancel</button>
-          </div>
-        </form>
-      )}
-      {isUrl && (
+      {isUrl ? (
         <>
           <p className="dialog__url" aria-label="Full URL"><code>{pending.url.full}</code></p>
           {pending.url.valid && <p>Domain: {pending.url.subdomain && <span className="dialog__sub">{pending.url.subdomain}.</span>}<strong className="dialog__apex">{pending.url.apex}</strong></p>}
@@ -55,6 +44,16 @@ export default function ClientDialog({ pending, onRespond, busy }) {
             <button aria-disabled={busy} onClick={act("cancel")}>Cancel</button>
           </div>
         </>
+      ) : (
+        <form noValidate onSubmit={(e) => { e.preventDefault(); if (!busy) onRespond("accept", clean()); }}>
+          {pending.fields.map((f) => <Field key={f.name} f={f} value={values[f.name]} error={pending.errors?.[f.name]} onChange={(v) => setValues((s) => ({ ...s, [f.name]: v }))} />)}
+          {pending.errors && Object.keys(pending.errors).some((k) => !pending.fields.some((f) => f.name === k)) && <p className="field-error" role="alert">{Object.entries(pending.errors).filter(([k]) => !pending.fields.some((f) => f.name === k)).map(([k, m]) => `${k}: ${m}`).join("; ")}</p>}
+          <div className="dialog__buttons">
+            <button type="submit" className="primary" aria-disabled={busy}>Submit (accept)</button>
+            <button type="button" aria-disabled={busy} onClick={act("decline")}>Decline</button>
+            <button type="button" aria-disabled={busy} onClick={act("cancel")}>Cancel</button>
+          </div>
+        </form>
       )}
       <details className="compliance"><summary>What this client does (spec rules)</summary>
         <ul>{pending.compliance.map((c) => <li key={c.text}><span className="lvl" data-level={c.level}>{c.level}</span> {c.text}</li>)}</ul>
