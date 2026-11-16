@@ -8,6 +8,7 @@ import TalkTrack from "./TalkTrack.jsx";
 import { getDiagram, getInfo, getScenarios, getSpec, getTalkTrack, postMode, resetServer, respond, startRun } from "./api.js";
 import Json from "./components/JsonPane.jsx";
 import ShelfLink from "./components/ShelfLink.jsx";
+import VerifyMark from "./components/VerifyMark.jsx";
 import TopMenu, { applyFontSize } from "./top-menu/TopMenu.jsx";
 import { workspaceId } from "./workspace.js";
 import fs from "node:fs";
@@ -141,6 +142,7 @@ export default function App() {
           onReset={onReset}
         >
           <ShelfLink headers={() => ({ "x-workspace": workspaceId() })} />
+          <VerifyMark id="mcp-elicitation-lab" headers={() => ({ "x-workspace": workspaceId() })} />
         </TopMenu>
       </header>
 
