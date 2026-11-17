@@ -5,8 +5,10 @@ import Transcript from "./Transcript.jsx";
 import Findings from "./Findings.jsx";
 import SpecPanel from "./SpecPanel.jsx";
 import TalkTrack from "./TalkTrack.jsx";
+import Json from "./components/JsonPane.jsx";
 import { getDiagram, getInfo, getScenarios, getSpec, getTalkTrack, postMode, resetServer, respond, startRun } from "./api.js";
 import ShelfLink from "./components/ShelfLink.jsx";
+import VerifyMark from "./components/VerifyMark.jsx";
 import TopMenu, { applyFontSize } from "./top-menu/TopMenu.jsx";
 import { workspaceId } from "./workspace.js";
 import fs from "node:fs";
@@ -121,33 +123,34 @@ export default function App() {
   const say = talk ? talk.filter((t) => t.for.includes(sc?.group)) : [];
 
   return (
-    <div className={`app${presenter ? " app--presenter" : ""}`}>
-      <header className="head">
-        <p className="banner" role="note" data-state="mock" data-testid="banner">{BANNER}</p>
-        <div className="head__row">
-          <div>
-            <h1 className="head__title">MCP Elicitation LAB</h1>
-            {!presenter && <p className="head__intro">An MCP server in the middle of a tool call needs more from the person. It asks the client, in <strong>form</strong> mode or <strong>URL</strong> mode, and the person can accept, decline or cancel. Pick a scenario, change what the client declares, and watch the messages, the dialog and the rules.</p>}
-          </div>
-          <div className="head__tools">
-            <TopMenu
-              mode={{ value: "mock", onChange: (v) => { if (v === "real") chooseReal(); }, realAvailable: info ? info.realAvailable : null, realHint: info?.realReason || LIVE_FALLBACK }}
-              theme={{ value: theme, onChange: pickTheme }}
-              fontSize={{ value: fontStep, onChange: setFontStep }}
-              present={{ active: presenter, onToggle: () => setPresenter((v) => !v), label: "Presenter (P)" }}
-              help={{ href: "https://github.com/curtismu7/mcp-elicitation-LAB#readme" }}
-              version={LAB_VERSION}
-              onReset={onReset}
-            >
-              <ShelfLink headers={() => ({ "x-workspace": workspaceId() })} />
-            </TopMenu>
-            <span className="chip" data-testid="mode">Mode: mock (in-process mocks)</span>
-          </div>
-        </div>
-        {liveMsg && <p className="field-error" role="status" data-testid="live-refusal">{liveMsg}</p>}
+    <div className={`app${presenter ? " app--presenter" : ""}`} data-testid="app">
+      <header className="shell-bar">
+        <span className="shell-brand">
+          <span className="shell-logo" aria-hidden="true">EL</span>
+          <h1>MCP Elicitation LAB</h1>
+          <span className="shell-badge" data-testid="mode" title="Mode: mock. The MCP server and client are in-process mocks.">MOCK<span className="sr-only"> mode: in-process mocks</span></span>
+        </span>
+        <nav className="shell-nav" aria-label="Pages">
+          <a href="#main" aria-current="page">Elicitation</a>
+        </nav>
+        <TopMenu
+          mode={{ value: "mock", onChange: (v) => { if (v === "real") chooseReal(); }, realAvailable: info ? info.realAvailable : null, realHint: info?.realReason || LIVE_FALLBACK }}
+          theme={{ value: theme, onChange: pickTheme }}
+          fontSize={{ value: fontStep, onChange: setFontStep }}
+          present={{ active: presenter, onToggle: () => setPresenter((v) => !v), label: "Presenter (P)" }}
+          help={{ href: "https://github.com/curtismu7/mcp-elicitation-LAB#readme" }}
+          version={LAB_VERSION}
+          onReset={onReset}
+        >
+          <ShelfLink headers={() => ({ "x-workspace": workspaceId() })} />
+          <VerifyMark id="mcp-elicitation-lab" headers={() => ({ "x-workspace": workspaceId() })} />
+        </TopMenu>
       </header>
 
-      <main>
+      <main id="main">
+        <p className="banner" role="note" data-state="mock" data-testid="banner">{BANNER}</p>
+        {liveMsg && <p className="field-error" role="status" data-testid="live-refusal">{liveMsg}</p>}
+        {!presenter && <p className="intro">An MCP server in the middle of a tool call needs more from the person. It asks the client, in <strong>form</strong> mode or <strong>URL</strong> mode, and the person can accept, decline or cancel. Pick a scenario, change what the client declares, and watch the messages, the dialog and the rules.</p>}
 
         <PrivilegeCheck />
         <p className="sr-only" role="status" aria-live="polite">{resetMsg}</p>
@@ -186,7 +189,8 @@ export default function App() {
         {run && (
           <>
             <h2>Messages <span className="status" data-state={run.status}>{STATUS[run.status] ?? run.status}</span></h2>
-            <p className="muted">Client declared: <code>{run.caps === null ? "no elicitation capability" : JSON.stringify({ elicitation: run.caps })}</code> trace {run.traceId}</p>
+            <p className="muted">Client declared{run.caps === null ? <>: <code>no elicitation capability</code></> : " these capabilities:"} trace {run.traceId}</p>
+            {run.caps !== null && <Json value={{ elicitation: run.caps }} label="Client capabilities" hot={["elicitation", "form", "url"]} />}
             <Transcript transcript={transcript} shown={shown} />
             {run.outcome && shown >= transcript.length && <p className="outcome" role="status" data-testid="outcome"><strong>Outcome:</strong> {run.outcome}</p>}
             {shown >= transcript.length && <Findings findings={run.findings} expected={sc?.expectedFindings} />}

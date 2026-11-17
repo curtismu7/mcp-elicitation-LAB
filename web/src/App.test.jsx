@@ -71,7 +71,8 @@ function mockApi({ runs = [], gate = null } = {}) {
 const base = { id: "r1", scenarioId: "form-accept", user: "alice", caps: { form: {}, url: {} }, traceId: "a".repeat(32), findings: [], flags: {}, outcome: null };
 // The Scenario label renders before getScenarios() resolves, so wait for the scenarios themselves (the options exist only after the fetch).
 const ready = () => waitFor(() => { expect(screen.getByLabelText("Scenario")).toBeInTheDocument(); expect(screen.getByRole("option", { name: "Form: accept" })).toBeInTheDocument(); });
-const runButton = () => screen.getByRole("button", { name: /^(Run|Running)/ });
+// The Privilege gateway card's retry button ("Run the gateway check") also matches the Run verb; the scenario run button is inside the Run controls.
+const runButton = () => within(screen.getByRole("region", { name: "Run controls" })).getByRole("button", { name: /^(Run|Running)/ });
 
 describe("App", () => {
   it("shows the banner naming the mode, the grouped scenarios, the talk track and the spec basis", async () => {
@@ -99,7 +100,7 @@ describe("App", () => {
     mockApi();
     render(<App />);
     await ready();
-    const header = screen.getByRole("banner");
+    const header = document.querySelector("header.shell-bar");
     const select = within(header).getByTestId("mode-select");
     expect(select).toHaveValue("mock");
     expect(within(header).getByTestId("mode")).toHaveTextContent("MOCK mode: in-process mocks");
@@ -117,7 +118,7 @@ describe("App", () => {
     const calls = mockApi();
     render(<App />);
     await ready();
-    fireEvent.change(within(screen.getByRole("banner")).getByTestId("mode-select"), { target: { value: "real" } });
+    fireEvent.change(within(document.querySelector("header.shell-bar")).getByTestId("mode-select"), { target: { value: "real" } });
     await waitFor(() => expect(calls.some(({ url, body }) => String(url).endsWith("/api/mode") && body?.source === "real")).toBe(true));
     await waitFor(() => expect(screen.getByTestId("live-refusal")).toHaveTextContent(REASON));
   });
