@@ -155,7 +155,7 @@ export default function App() {
         {liveMsg && <p className="field-error" role="status" data-testid="live-refusal">{liveMsg}</p>}
         {!presenter && <p className="intro">An MCP server in the middle of a tool call needs more from the person. It asks the client, in <strong>form</strong> mode or <strong>URL</strong> mode, and the person can accept, decline or cancel. Pick a scenario, change what the client declares, and watch the messages, the dialog and the rules.</p>}
 
-        <PrivilegeCheck />
+        {info?.realAvailable && <PrivilegeCheck />}
         <p className="sr-only" role="status" aria-live="polite">{resetMsg}</p>
         {presenter && say.length > 0 && (
           <aside className="presenter-say" data-testid="presenter-say" aria-label="Talk track for this scenario">
