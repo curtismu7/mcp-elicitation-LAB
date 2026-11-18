@@ -10,6 +10,7 @@ import { getDiagram, getInfo, getScenarios, getSpec, getTalkTrack, postMode, res
 import ShelfLink from "./components/ShelfLink.jsx";
 import VerifyMark from "./components/VerifyMark.jsx";
 import TopMenu, { applyFontSize } from "./top-menu/TopMenu.jsx";
+import TalkTrackDialog from "./talk-track/TalkTrackDialog.jsx";
 import { workspaceId } from "./workspace.js";
 import fs from "node:fs";
 import PrivilegeCheck from "./privilege-check/PrivilegeCheck.jsx";
@@ -51,6 +52,7 @@ export default function App() {
   const [resetMsg, setResetMsg] = useState("");
   const [liveMsg, setLiveMsg] = useState("");
   const [presenter, setPresenter] = useState(false);
+  const [talkOpen, setTalkOpen] = useState(false);
   const [openKey, setOpenKey] = useState(null);
   const [theme, setTheme] = useState(initialTheme);
   const [fontStep, setFontStep] = useState(() => { try { const f = localStorage.getItem("mce.font"); return ["S", "M", "L"].includes(f) ? f : "M"; } catch { return "M"; } });
@@ -138,6 +140,7 @@ export default function App() {
           theme={{ value: theme, onChange: pickTheme }}
           fontSize={{ value: fontStep, onChange: setFontStep }}
           present={{ active: presenter, onToggle: () => setPresenter((v) => !v), label: "Presenter (P)" }}
+          talkTrack={{ active: talkOpen, onToggle: () => setTalkOpen((v) => !v) }}
           help={{ href: "https://github.com/curtismu7/mcp-elicitation-LAB#readme" }}
           version={LAB_VERSION}
           onReset={onReset}
@@ -199,6 +202,8 @@ export default function App() {
         {!presenter && <TalkTrack talk={talk} />}
         {!presenter && <SpecPanel spec={spec} />}
       </main>
+      <TalkTrackDialog isOpen={talkOpen} onClose={() => setTalkOpen(false)} talk={talk ?? []} />
+
     </div>
   );
 }
