@@ -176,6 +176,7 @@ export default function App() {
           <label>Speed
             <select value={speed} onChange={(e) => setSpeed(Number(e.target.value))}>{SPEEDS.map((s) => <option key={s} value={s}>{s}x</option>)}</select>
           </label>
+          {/* ui-pattern: allow P9 Run is the page's one primary action (the gateway card's retry is card chrome) */}
           <button className="primary" aria-disabled={busy || !scenarioId} onClick={onRun}>{busy ? "Running…" : "Run"}</button>
           <button aria-disabled={!run} onClick={() => { if (run) animate(transcript.length); }}>Simulate again</button>
         </section>
