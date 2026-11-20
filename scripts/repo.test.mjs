@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
-const SKIP = new Set(['node_modules', 'dist', '.git', 'package-lock.json']);
+const SKIP = new Set(['node_modules', 'dist', '.git', 'package-lock.json', 'diagram-kit']); // the vendored diagram kit is pinned by its sha256 file, not re-scanned here
 // Every shipped text file, except the test files that hold the patterns they look for.
 function shipped(dir = root, out = []) {
   for (const name of fs.readdirSync(dir)) {
