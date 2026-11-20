@@ -321,11 +321,12 @@ describe("buildGraph (from the diagram data)", () => {
   it("takes its nodes, positions and colours from the data, not from code", () => {
     const g = buildGraph(DIAGRAM, [], 0);
     expect(g.nodes.map((n) => [n.id, n.position.x, n.position.y, n.data.color])).toEqual([["person", 0, 40, "dark"], ["client", 190, 40, "blue"], ["server", 380, 40, "red"], ["browser", 190, 190, "grey"]]);
-    expect(g.edges.map((e) => [e.id, e.label, e.className])).toEqual([["person-client", "choice", "flow-edge flow-edge--idle"], ["client-server", "JSON-RPC", "flow-edge flow-edge--idle"], ["client-browser", "opens URL", "flow-edge flow-edge--idle"], ["browser-server", "server page", "flow-edge flow-edge--idle"]]);
+    // The curve only: the label text rides in the edge's data for the kit's EdgeLabels layer (§8c).
+    expect(g.edges.map((e) => [e.id, e.data.text, e.className])).toEqual([["person-client", "choice", "flow-edge flow-edge--idle"], ["client-server", "JSON-RPC", "flow-edge flow-edge--idle"], ["client-browser", "opens URL", "flow-edge flow-edge--idle"], ["browser-server", "server page", "flow-edge flow-edge--idle"]]);
   });
   it("lights only the links a revealed message crossed, and counts them", () => {
     const g = buildGraph(DIAGRAM, tr, 3);
-    const e = Object.fromEntries(g.edges.map((x) => [x.id, x.label]));
+    const e = Object.fromEntries(g.edges.map((x) => [x.id, x.data.text]));
     expect(e).toMatchObject({ "client-server": "2 messages", "person-client": "1 message", "client-browser": "opens URL", "browser-server": "server page" });
   });
   it("marks a link as an error when its last message is an error", () => {

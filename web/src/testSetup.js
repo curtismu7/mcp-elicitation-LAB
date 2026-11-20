@@ -14,3 +14,8 @@ for (const name of ["localStorage", "sessionStorage"]) {
     });
   }
 }
+
+// React Flow (and the vendored diagram kit's label layer) measure the DOM with a ResizeObserver, which jsdom lacks.
+class RO { observe() {} unobserve() {} disconnect() {} }
+globalThis.ResizeObserver ??= RO;
+globalThis.DOMMatrixReadOnly ??= class { constructor() { this.m22 = 1; } };
